@@ -41,10 +41,14 @@ router.get('/:categoryId/products/:productId', (req, res) => {
 router.post(
   '/',
   validatorHandler(createCategorySchema, 'body'),
-  async (req, res) => {
-    const body = req.body;
-    const newCategory = await service.create(body);
-    res.status(201).json(newCategory);
+  async (req, res, next) => {
+    try {
+      const body = req.body;
+      const newCategory = await service.create(body);
+      res.status(201).json(newCategory);
+    } catch (error) {
+      next(error);
+    }
   }
 );
 

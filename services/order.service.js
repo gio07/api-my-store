@@ -1,72 +1,46 @@
-const faker = require('faker');
 const boom = require('@hapi/boom');
 
+const { models } = require('./../libs/sequelize');
+
 class OrdersService {
-  constructor() {
-    this.orders = [];
-    this.generate();
-  }
+  constructor() {}
 
-  generate() {
-    const limit = 100;
-    for (let index = 0; index < limit; index++) {
-      this.orders.push({
-        id: faker.datatype.uuid(),
-        name: `Order ${index + 1}`,
-        isBlock: faker.datatype.boolean(),
-      });
-    }
-  }
-
-  create(data) {
-    const newOrder = {
-      id: faker.datatype.uuid(),
-      ...data,
-    };
-
-    this.orders.push(newOrder);
+  async create(data) {
+    const newOrder = await models.Order.create(data);
     return newOrder;
   }
 
-  find() {
-    return this.orders;
+  async addItem(data) {
+    const newItem = await models.OrderProduct.create(data);
+    return newItem;
   }
 
-  findOne(id) {
-    const order = this.orders.find((order) => order.id === id);
-    if (!order) {
-      throw boom.notFound('Order not found');
-    }
+  async find() {
+    const orders = await models.Order.findAll();
+    return orders;
+  }
 
-    if (order.isBlock) {
-      throw boom.conflict('Order is block');
-    }
-
+  async findOne(id) {
+    const order = await models.Order.findByPk(id, {
+      include: [
+        {
+          association: 'customer',
+          include: ['user'],
+        },
+        'items',
+      ],
+    });
     return order;
   }
 
   update(id, changes) {
-    const index = this.orders.findIndex((order) => order.id === id);
-    if (index === -1) {
-      throw boom.notFound('Order not found');
-    }
-
-    const order = this.orders[index];
-    this.orders[index] = {
-      ...order,
-      ...changes,
+    return {
+      id,
+      changes,
     };
-
-    return this.orders[index];
   }
 
   delete(id) {
-    const index = this.orders.findIndex((order) => order.id === id);
-    if (index === -1) {
-      throw boom.notFound('Order not found');
-    }
-
-    this.orders.splice(index, 1);
     return { id };
   }
 }

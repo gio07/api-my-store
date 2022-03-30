@@ -1,72 +1,35 @@
-const faker = require('faker');
 const boom = require('@hapi/boom');
 
+const { models } = require('./../libs/sequelize');
+
 class CategoriesService {
-  constructor() {
-    this.categories = [];
-    this.generate();
-  }
+  constructor() {}
 
-  generate() {
-    const limit = 10;
-    for (let index = 0; index < limit; index++) {
-      this.categories.push({
-        id: faker.datatype.uuid(),
-        name: `category ${index + 1}`,
-        isBlock: faker.datatype.boolean(),
-      });
-    }
-  }
-
-  create(data) {
-    const newCategory = {
-      id: faker.datatype.uuid(),
-      ...data,
-    };
-
-    this.categories.push(newCategory);
+  async create(data) {
+    const newCategory = await models.Category.create(data);
     return newCategory;
   }
 
-  find() {
-    return this.categories;
+  async find() {
+    const categories = await models.Category.findAll();
+    return categories;
   }
 
-  findOne(id) {
-    const category = this.categories.find((category) => category.id === id);
-    if (!category) {
-      throw boom.notFound('Category not found');
-    }
-
-    if (category.isBlock) {
-      throw boom.conflict('Category is block');
-    }
-
+  async findOne(id) {
+    const category = await models.Category.findByPk(id, {
+      include: ['products'],
+    });
     return category;
   }
 
   update(id, changes) {
-    const index = this.categories.findIndex((category) => category.id === id);
-    if (index === -1) {
-      throw boom.notFound('Category not found');
-    }
-
-    const category = this.categories[index];
-    this.categories[index] = {
-      ...category,
-      ...changes,
+    return {
+      id,
+      changes,
     };
-
-    return this.categories[index];
   }
 
   delete(id) {
-    const index = this.categories.findIndex((category) => category.id === id);
-    if (index === -1) {
-      throw new Error('Category not found');
-    }
-
-    this.categories.splice(index, 1);
     return { id };
   }
 }
